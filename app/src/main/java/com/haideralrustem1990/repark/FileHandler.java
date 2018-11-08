@@ -14,25 +14,41 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 
 public class FileHandler {
+    int maxNumberOfObjects = 3;
 
-    public ArrayList<Occurrence> loadStringIntoArrayList(String linesReadFromFile, int numberOfObjects) {
+    public ArrayList<Occurrence> loadStringIntoArrayList(String linesReadFromFile) {
+
         ArrayList<Occurrence> array = new ArrayList<>(3);
         String lines[] = linesReadFromFile.split("\\r?\\n");
         Log.d("lines length", String.valueOf(lines.length));
+        int dynamicNumberOfObjects = 0;
+
+        if(lines.length != 0){
+            dynamicNumberOfObjects =  lines.length / 3;
+
+            /* variable dynamicNumberOfObjects is not necessarily always 3(max capacity),
+            as it is supposed to predict how many objects will the array have based on number of lines.
+            it does so by checking the number of lines based on the multiples of 3 (3, 6, 9) and then
+            evaluates number of objects to (1, 2, 3) respectively*/
+
+        }
 
 
-        int nextItem = lines.length-1;  // this will evaluate to 8
+        int nextItem = lines.length-1;  // this will evaluate to 8 or 5 or 2
 
-        if(lines.length != 3 * numberOfObjects){  // This is incorporated in case of file not storing string properly
-            String [] defaultLines = {"", "", "",
-                        "", "", "",
-                        "", "", ""};
+
+        if(lines.length > 3 * maxNumberOfObjects || lines.length < 3){  // This is incorporated in case of file not storing string properly
+            String [] defaultLines = {"Empty", "Empty", "Empty",
+                        "Empty", "Empty", "Empty",
+                        "Empty", "Empty", "Empty"};
             lines = defaultLines;
+            nextItem = lines.length-1;
+            dynamicNumberOfObjects = maxNumberOfObjects;
         }
 
         Log.d(" NEXT ITEM ", String.valueOf(nextItem));
 
-        for (int i = 0; i < numberOfObjects; i++){
+        for (int i = 0; i < dynamicNumberOfObjects; i++){
 
             Log.d(" ", String.valueOf(nextItem));
             String imageUri = lines[nextItem--];
@@ -85,6 +101,7 @@ public class FileHandler {
           * that represent the string text value*/
 
         ArrayList<Occurrence> arrayWithLoadedValues = new ArrayList<>(3);
+        int numberOfObjects;
         FileInputStream fis = null;
         try {
             fis = context.openFileInput(fileName);
@@ -102,7 +119,7 @@ public class FileHandler {
             String readString = sb.toString();
             fis.close();
             Log.d("READSTRING   : ", readString);
-            arrayWithLoadedValues = loadStringIntoArrayList(readString, 3);
+            arrayWithLoadedValues = loadStringIntoArrayList(readString);
 
         } catch (IOException e) {
             e.printStackTrace();

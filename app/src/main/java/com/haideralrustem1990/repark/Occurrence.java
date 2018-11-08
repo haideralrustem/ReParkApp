@@ -22,7 +22,8 @@ public class Occurrence {
         return text2;
     }
     public String getimageUriString() {
-        return imageUri;}
+        return imageUri;
+    }
 
     public void setText1(String text1) {
         this.text1 = text1;

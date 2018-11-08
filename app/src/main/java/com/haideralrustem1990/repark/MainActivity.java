@@ -1,18 +1,15 @@
 package com.haideralrustem1990.repark;
 
-import android.animation.Animator;
-import android.animation.AnimatorListenerAdapter;
-import android.animation.ObjectAnimator;
 import android.animation.ValueAnimator;
 import android.content.ContentValues;
 import android.content.Intent;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.Color;
-import android.graphics.PorterDuff;
 import android.net.Uri;
 import android.provider.MediaStore;
 import android.provider.OpenableColumns;
+import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;
@@ -23,7 +20,6 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.animation.Animation;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -32,7 +28,6 @@ import android.widget.Toast;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Stack;
 
 public class MainActivity extends AppCompatActivity implements Connector {
     private static int initialCapacity = 3;
@@ -50,7 +45,7 @@ public class MainActivity extends AppCompatActivity implements Connector {
 
     public static ArrayList<Occurrence> occurrences = new ArrayList<>(initialCapacity);
 
-    static String TAG = "DEBUG";
+    static String TAG = "- - - DEBUG - - -  ";
 
 
     public void loadArrayFromFile(){ // <<<=================  load data from file
@@ -126,23 +121,48 @@ public class MainActivity extends AppCompatActivity implements Connector {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        checkingIfSavedFileExists();
+
         if(savedInstanceState == null){
+            checkingIfSavedFileExists();
             loadArrayFromFile(); // The method will create a filehandler object which will read data
             // from the savedFileName
         }
+
         fragmentCount = occurrences.size();
         SectionsPagerAdapter theAdapter = new SectionsPagerAdapter(
           getSupportFragmentManager(), fragmentCount);
 
         ViewPager pager = (ViewPager)findViewById(R.id.pager);
-        pager.setAdapter(theAdapter);
+        pager.setAdapter(theAdapter);  // view is rendered
+
+        FloatingActionButton saveFab = (FloatingActionButton) findViewById(R.id.save_button);
+        FloatingActionButton removeFab = (FloatingActionButton) findViewById(R.id.remove_button);
+        FloatingActionButton cameraFab = (FloatingActionButton) findViewById(R.id.camera_button);
+        saveFab.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                onClickAdd(view);
+            }
+        });
+        removeFab.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                onClickRemove(view);
+            }
+        });
+        cameraFab.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                onClickCameraButton(view);
+            }
+        });
 
     }
 
     @Override
     public void onStart(){
         super.onStart();
+
 
     }
 
@@ -194,6 +214,7 @@ public class MainActivity extends AppCompatActivity implements Connector {
 
         @Override
         public int getCount() {
+
             return count;
         }
         // Here we can finally safely save a reference to the created
@@ -242,7 +263,7 @@ public class MainActivity extends AppCompatActivity implements Connector {
 
             retrievedText1 = selectedInstance.getText1();
             retrievedText2 = selectedInstance.getText2();
-            Log.d("t", "retrieved text1 "+retrievedText1 +
+            Log.d(" ----- > ", "retrieved text1 "+retrievedText1 +
                     " retrievedText2 "+ retrievedText2);
         }
 //        else if(occurrences.size() == fragmentPos) {
@@ -255,7 +276,8 @@ public class MainActivity extends AppCompatActivity implements Connector {
 //
 //        }
 
-        textView.setText(retrievedText1+ "\n"+ retrievedText2);
+        textView.setText(retrievedText1+ ".  "+ retrievedText2);
+        Log.d(" ----- > ", " adjustTextView  was  called  \n");
 
     }
     @Override
@@ -264,23 +286,35 @@ public class MainActivity extends AppCompatActivity implements Connector {
          */
         View fragmentLayout = fragment.getView();
         ImageView imageView =  (ImageView)fragmentLayout.findViewById(imageViewId);
+        imageView.setImageResource(R.drawable.noimage);
         if ( occurrences.size() > 0 && fragmentPosition < occurrences.size()
                 ) {
 
             Occurrence selectedInstance = peek(fragmentPosition);  // Picking instance based on fragment position
+
+            String testing = selectedInstance.getimageUriString();
+
 
             if( selectedInstance.getimageUriString() != null){
                 String retrievedImageUri = selectedInstance.getimageUriString();
                 Uri imageUri = Uri.parse(retrievedImageUri);
                 Bitmap bitmapImage = retrieveImageAsBitmap(imageUri);
 
-                imageView.setImageBitmap(bitmapImage);
+                if(selectedInstance.getimageUriString().contains("/")){
+                    imageView.setImageBitmap(bitmapImage);
+                    Log.d(" ----  > ", "imageView.setImageBitmap(bitmapImage)");
+                }
+
+                return;
             }
             else {
                 Log.d(TAG, "No imageUri detected in the array");
+                imageView.setImageResource(R.drawable.noimage);
             }
 
+
         }
+
 
     }
 
@@ -317,13 +351,13 @@ public class MainActivity extends AppCompatActivity implements Connector {
         */
 
         if (fragmentCount >= 3){
-            Log.d("TAG", String.valueOf(fragmentCount));
-            Log.d("TAG", "Fragment count is full");
+            Log.d("createNewPagerAdapter", String.valueOf(fragmentCount));
+            Log.d("createNewPagerAdapter", "Fragment count is full");
             fragmentCount = 3;
         }
         else {
             fragmentCount = occurrences.size();
-            Log.d("TAG", "Fragment count increased "+ String.valueOf(fragmentCount));
+            Log.d("createNewPagerAdapter", "Fragment count increased "+ String.valueOf(fragmentCount));
         }
 
         SectionsPagerAdapter theAdapter = new SectionsPagerAdapter(
@@ -349,7 +383,7 @@ public class MainActivity extends AppCompatActivity implements Connector {
         createNewPagerAdapter(R.id.pager);
 
         // Adding animation to button clicks by calling addAnimation(screenFlashColor)
-        addAnimation("#4CD137");
+        addAnimation("#0091EA");
 
         Toast.makeText(this, "Location added!", Toast.LENGTH_SHORT).show();
     }
@@ -369,7 +403,7 @@ public class MainActivity extends AppCompatActivity implements Connector {
                 float fractionAnim = (float) valueAnimator.getAnimatedValue();
                 // Change starting color (#4CD137 capital letters) and ending color(white)
                 view.setBackgroundColor(ColorUtils.blendARGB(Color.parseColor(startColorHex)
-                        , Color.parseColor("#FFFFFF")
+                        , Color.parseColor("#FFB39DDB")
                         , fractionAnim));
             }
         });
@@ -397,7 +431,7 @@ public class MainActivity extends AppCompatActivity implements Connector {
         imageUri = getContentResolver().insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
         currentImageUri = imageUri; // This is done because we need a global imageUri in onActivityResult
 
-        objectToBeAdded.setImageUriString(imageUri.toString()); // Recording the image Uri
+        objectToBeAdded.setImageUriString(imageUri.toString()); // Recording the image Uri in the occurrence object
         prepareAndAddOccurrence(objectToBeAdded, R.id.editText1, R.id.editText2);
 
 
@@ -501,6 +535,9 @@ public class MainActivity extends AppCompatActivity implements Connector {
                 getSupportFragmentManager(), fragmentCount );
         ViewPager pager = (ViewPager)findViewById(R.id.pager);
         pager.setAdapter(theAdapter);
+
+        // Adding animation to button clicks by calling addAnimation(screenFlashColor)
+        addAnimation("#e74c3c");
 
         Toast.makeText(this, "Location removed!", Toast.LENGTH_SHORT).show();
     }
