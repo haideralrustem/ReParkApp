@@ -2,12 +2,16 @@ package com.haideralrustem1990.repark;
 
 
 import android.content.Context;
+import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 
@@ -70,11 +74,35 @@ public class TopFragment extends Fragment {
         //R.id.topTextView
         mainActivity.adjustImageView(R.id.imageView, fragmentPosition, this);
 
+        ImageView occurrenceImage = (ImageView) getView().findViewById(R.id.imageView);
+
+
+        View.OnClickListener clickListener = new View.OnClickListener() {
+            public void onClick(View v) {
+                // Write your awesome code here
+                onClickImage(v);
+            }
+        };
+        occurrenceImage.setOnClickListener(clickListener);
+
+
     }
     @Override
     public void onSaveInstanceState(Bundle bundle){
         bundle.putInt("position", fragmentPosition);
     }
 
+    public void onClickImage(View view){
+        Log.d(" -- > ", "  --   ooo  --- ");
+        Uri imageUri;
+        Occurrence currentOccurrence = MainActivity.occurrences.get(fragmentPosition);
+        String imageUriString = currentOccurrence.getimageUriString();
+        if(imageUriString != null && imageUriString.contains("/")) {
+            imageUri = Uri.parse(imageUriString);
+            startActivity(new Intent(Intent.ACTION_VIEW, imageUri));
+        }
+
+
+    }
 
 }

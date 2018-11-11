@@ -1,6 +1,7 @@
 package com.haideralrustem1990.repark;
 
 import android.animation.ValueAnimator;
+import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.Intent;
 import android.database.Cursor;
@@ -25,6 +26,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -96,6 +98,17 @@ public class MainActivity extends AppCompatActivity implements Connector {
         }
         return removedItem;
     }
+    public static Occurrence removeOccurence(int index){
+        Occurrence removedItem = null;
+        if(occurrences.size() > 0){
+            removedItem = occurrences.remove(index);
+        }
+        else {
+            Log.d(" ---->", "array is empty, cannot Remove");
+
+        }
+        return removedItem;
+    }
     public static void dequeueOccurrence(){
         /* Method needed to dequeue first item when user adds new occurrence even with
         * the array of occurrences having full capacity (we want to make room so we kick
@@ -120,6 +133,10 @@ public class MainActivity extends AppCompatActivity implements Connector {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        Intent introIntent = new Intent(MainActivity.this, OnboardingActivity.class);
+        if(savedInstanceState == null){
+            startActivity(introIntent);
+        }
 
 
         if(savedInstanceState == null){
@@ -159,10 +176,10 @@ public class MainActivity extends AppCompatActivity implements Connector {
 
     }
 
+
     @Override
     public void onStart(){
         super.onStart();
-
 
     }
 
@@ -296,13 +313,20 @@ public class MainActivity extends AppCompatActivity implements Connector {
 
 
             if( selectedInstance.getimageUriString() != null){
+
                 String retrievedImageUri = selectedInstance.getimageUriString();
                 Uri imageUri = Uri.parse(retrievedImageUri);
+
                 Bitmap bitmapImage = retrieveImageAsBitmap(imageUri);
 
                 if(selectedInstance.getimageUriString().contains("/")){
-                    imageView.setImageBitmap(bitmapImage);
-                    Log.d(" ----  > ", "imageView.setImageBitmap(bitmapImage)");
+                    if(bitmapImage != null){
+                        imageView.setImageBitmap(bitmapImage);
+                        Log.d(" ----  > ", "imageView.setImageBitmap(bitmapImage)");
+                    }
+                    else {
+                        imageView.setImageResource(R.drawable.noimage);
+                    }
                 }
 
                 return;
@@ -312,12 +336,9 @@ public class MainActivity extends AppCompatActivity implements Connector {
                 imageView.setImageResource(R.drawable.noimage);
             }
 
-
         }
 
-
     }
-
 
     public String retrieveTextFromEditText(int editTextId) {
         /* A helper method that gets the EditText1 and 2 */
@@ -411,9 +432,7 @@ public class MainActivity extends AppCompatActivity implements Connector {
     }
 
 
-
     // METHODS FOR CAMERA BUTTON
-
 
 
     public void onClickCameraButton(View view){
@@ -436,7 +455,7 @@ public class MainActivity extends AppCompatActivity implements Connector {
 
 
 
-        Log.d("iamgeUri", imageUri.toString());
+        Log.d("iamgeUri ----- > ", imageUri.toString());
         Log.d("values", values.toString());
 
         Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
@@ -453,12 +472,14 @@ public class MainActivity extends AppCompatActivity implements Connector {
         if (requestCode == CAMERA_REQUEST && resultCode == RESULT_OK) {
 
 
-
             // Refresh the ViewPager ---> to force Fragment to call adjustImageView()
             // Refresh the ViewPager
             createNewPagerAdapter(R.id.pager);
 
 
+        } else if (resultCode == RESULT_CANCELED){
+            Log.d(" ---- >  ", "Camera taking was canceled");
+            return;
         }
     }
 
@@ -470,15 +491,16 @@ public class MainActivity extends AppCompatActivity implements Connector {
         Bitmap bitmap = null;
         try {
             bitmap = MediaStore.Images.Media.getBitmap(getContentResolver(), selectedImageUri);
+            if (bitmap != null) {
+                Log.d("bitmap", bitmap.toString());
+                Log.d("iamgeUri", selectedImageUri.toString());
+                Log.d("fileName ", getFileName(selectedImageUri));
 
-            Log.d("bitmap", bitmap.toString());
-            Log.d("iamgeUri", selectedImageUri.toString());
-            Log.d("fileName ", getFileName(selectedImageUri));
+                imageName = getFileName(selectedImageUri);
+                //imageNames.add(imageName);
 
-            imageName = getFileName(selectedImageUri);
-            //imageNames.add(imageName);
-
-            Log.d("imageName", imageName);
+                Log.d("imageName", imageName);
+            }
 
 
         } catch (FileNotFoundException e) {
@@ -517,7 +539,23 @@ public class MainActivity extends AppCompatActivity implements Connector {
     public void onClickRemove(View view){
         Occurrence objectToBeRemoved = new Occurrence();
 
-        popOccurence();
+
+
+        ViewPager oldPager = (ViewPager) findViewById(R.id.pager);
+        int currentPage = oldPager.getCurrentItem();
+
+        if (currentPage == 2){
+            objectToBeRemoved = removeOccurence((occurrences.size()-1) - 2);
+            // Array size is 3 but last item index is (3-1 = 2)
+        }
+        else if(currentPage == 1){
+            objectToBeRemoved = removeOccurence((occurrences.size()-1) - 1);
+        }
+        else if(currentPage == 0){
+            objectToBeRemoved = removeOccurence((occurrences.size()-1) - 0);
+        }
+
+
         Log.d("MainActivity", occurrences.toString());
         fragmentCount = occurrences.size();
         if (fragmentCount < 3 && fragmentCount > 0){
@@ -536,8 +574,21 @@ public class MainActivity extends AppCompatActivity implements Connector {
         ViewPager pager = (ViewPager)findViewById(R.id.pager);
         pager.setAdapter(theAdapter);
 
+
         // Adding animation to button clicks by calling addAnimation(screenFlashColor)
         addAnimation("#e74c3c");
+
+
+        String retrievedImageUri = objectToBeRemoved.getimageUriString();
+        if(retrievedImageUri.contains("/")) {
+            Uri imageUri = Uri.parse(retrievedImageUri);
+            long mediaId = ContentUris.parseId(imageUri);
+            Uri contentUri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI;
+            Uri itemUri = ContentUris.withAppendedId(contentUri, mediaId);
+
+            this.getContentResolver().delete(itemUri, null, null);
+
+        }
 
         Toast.makeText(this, "Location removed!", Toast.LENGTH_SHORT).show();
     }
