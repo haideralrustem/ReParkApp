@@ -124,7 +124,7 @@ public class MainActivity extends AppCompatActivity implements Connector {
             Toast.makeText(this, "Loading your saved locations", Toast.LENGTH_SHORT).show();
         }
         else {
-            Toast.makeText(this, "No Saved File was found on this device", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Preparing", Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -134,8 +134,11 @@ public class MainActivity extends AppCompatActivity implements Connector {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         Intent introIntent = new Intent(MainActivity.this, OnboardingActivity.class);
+        FileHandler fh = new FileHandler();
         if(savedInstanceState == null){
-            startActivity(introIntent);
+            if (!fh.checkIfFileExists(saveFileName, this)){
+                startActivity(introIntent);
+            }
         }
 
 
@@ -577,10 +580,11 @@ public class MainActivity extends AppCompatActivity implements Connector {
 
         // Adding animation to button clicks by calling addAnimation(screenFlashColor)
         addAnimation("#e74c3c");
-
-
-        String retrievedImageUri = objectToBeRemoved.getimageUriString();
-        if(retrievedImageUri.contains("/")) {
+        String retrievedImageUri = null;
+        if(objectToBeRemoved != null){
+            retrievedImageUri = objectToBeRemoved.getimageUriString();
+        }
+        if(retrievedImageUri != null && retrievedImageUri.contains("/")) {
             Uri imageUri = Uri.parse(retrievedImageUri);
             long mediaId = ContentUris.parseId(imageUri);
             Uri contentUri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI;

@@ -1,10 +1,7 @@
 package com.haideralrustem1990.repark;
 
 import android.support.design.widget.CoordinatorLayout;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
 
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
@@ -20,8 +17,6 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ImageView;
-import android.widget.TextView;
-
 
 
 public class OnboardingActivity extends AppCompatActivity {
@@ -41,11 +36,11 @@ public class OnboardingActivity extends AppCompatActivity {
      */
     private ViewPager mViewPager;
     int page = 0;
-    ImageButton mNextBtn;
+    Button mNextBtn;
     Button mFinishBtn, mSkipBtn;
 
-    ImageView zero, one, two;
-    ImageView[] indicators = new ImageView[3];
+    ImageView zero, one, two, three;
+    ImageView[] indicators = new ImageView[4];
 
 
 
@@ -71,7 +66,7 @@ public class OnboardingActivity extends AppCompatActivity {
         mViewPager.setCurrentItem(page);
 
 
-        mNextBtn = (ImageButton) findViewById(R.id.intro_btn_next);
+        mNextBtn = (Button) findViewById(R.id.intro_btn_next);
         mFinishBtn = (Button) findViewById(R.id.intro_btn_finish);
         mSkipBtn = (Button) findViewById(R.id.intro_btn_skip);
 
@@ -81,9 +76,11 @@ public class OnboardingActivity extends AppCompatActivity {
         zero = (ImageView) findViewById(R.id.intro_indicator_0);
         one = (ImageView) findViewById(R.id.intro_indicator_1);
         two = (ImageView) findViewById(R.id.intro_indicator_2);
+        three = (ImageView) findViewById(R.id.intro_indicator_3);
         indicators[0] = zero;
         indicators[1] = one;
         indicators[2] = two;
+        indicators[3] = three;
 
 
 
@@ -104,8 +101,8 @@ public class OnboardingActivity extends AppCompatActivity {
 
 
 
-               mNextBtn.setVisibility(position == 2 ? View.GONE : View.VISIBLE);
-               mFinishBtn.setVisibility(position == 2 ? View.VISIBLE : View.GONE);
+               mNextBtn.setVisibility(position == 3 ? View.GONE : View.VISIBLE);
+               mFinishBtn.setVisibility(position == 3 ? View.VISIBLE : View.GONE);
 
 
            }
@@ -189,8 +186,8 @@ public class OnboardingActivity extends AppCompatActivity {
 
         ImageView img;
 
-        int[] imageList = new int[]{R.drawable.round_add_circle_outline_white_24dp,
-                R.drawable.round_close_white_48dp, R.drawable.camera48dp};
+        int[] imageList = new int[]{R.drawable.firstscreen, R.drawable.swipes1,
+                R.drawable.bigscreenshottext, R.drawable.bigscreenshotbuttons};
 
         public PlaceholderFragment() {
         }
@@ -238,7 +235,7 @@ public class OnboardingActivity extends AppCompatActivity {
         @Override
         public int getCount() {
             // Show 3 total pages.
-            return 3;
+            return 4;
         }
     }
 }
