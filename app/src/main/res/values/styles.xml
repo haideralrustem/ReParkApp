@@ -14,6 +14,22 @@
         <item name="android:background">@drawable/button_style_1</item>
     </style>
 
+    <style name="CustomActionBarTheme">
+        <item name="android:background">@color/colorPrimary</item>
+        <item name="android:titleTextStyle">@style/myTheme.ActionBar.Text</item>
+        <item name="titleTextStyle">@style/myTheme.ActionBar.Text</item>
+    </style>
+    <!-- A theme for when you click on menu items -->
+    <style name="popUpTheme" parent="AppTheme">
+        <item name="android:background">@color/colorPrimary</item>
+        <item name="overlapAnchor">false</item>
+        <item name="android:dropDownVerticalOffset">-4dp</item>
+        <item name="android:textColor">@color/colorPlainWhite</item>
+    </style>
+    <style name="myTheme.ActionBar.Text" parent="@android:style/TextAppearance">
+        <item name="android:textColor">@color/colorPlainWhite</item>
+    </style>
+
     <style name="AppTheme.NoActionBar">
         <item name="windowActionBar">false</item>
         <item name="windowNoTitle">true</item>

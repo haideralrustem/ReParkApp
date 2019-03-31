@@ -1,30 +1,48 @@
 package com.haideralrustem1990.repark;
 
+import android.Manifest;
 import android.animation.ValueAnimator;
+import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.ContentUris;
 import android.content.ContentValues;
+import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.content.res.Resources;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.Color;
+import android.graphics.drawable.Drawable;
 import android.net.Uri;
+import android.os.Build;
 import android.provider.MediaStore;
 import android.provider.OpenableColumns;
+import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.graphics.ColorUtils;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.widget.Toolbar;
+import android.text.Html;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
+
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -42,6 +60,8 @@ public class MainActivity extends AppCompatActivity implements Connector {
     // point to the value that was stored in the occurrence object)
     private Bitmap currentBitmapImage;
     private static final int CAMERA_REQUEST = 1888;
+    public static final int MY_PERMISSIONS_REQUEST_WRITE_EXTERNAL_STORAGE = 112;
+    public static final int MY_PERMISSIONS_REQUEST_READ_EXTERNAL_STORAGE = 113;
 
 
 
@@ -72,20 +92,33 @@ public class MainActivity extends AppCompatActivity implements Connector {
         return occurrences.get(pos);
     }
 
+    public static Occurrence dequeueOccurrence(){
+        /* Method needed to dequeue first item when user adds new occurrence even with
+         * the array of occurrences having full capacity (we want to make room so we kick
+         * the first)*/
+        Occurrence removed = occurrences.remove(0);
 
-    public static void pushOccurence(Occurrence occurrence){
+        Log.d(TAG, "dequeued occurrences. occurrences = " + occurrences.toString());
+        return removed;
+    }
+
+    public static Occurrence pushOccurence(Occurrence occurrence){
+        Occurrence pushedAwayOccurence = new Occurrence();
+
         if(occurrences.size() >= initialCapacity){
             Log.d("MainActivity", String.valueOf(occurrences.size()));
             Log.d("Dequeue", "array is full, so we dequeue");
-            dequeueOccurrence();
+            pushedAwayOccurence = dequeueOccurrence();
             occurrences.add(occurrence);
             Log.d("TAG", "supposedly added. Array is "+ occurrences.toString());
 
         }
         else {
             occurrences.add(occurrence);
+            pushedAwayOccurence = null;
             Log.d("TAG", "supposedly added. Array is "+ occurrences.toString());
         }
+        return pushedAwayOccurence;
     }
     public static Occurrence popOccurence(){
         Occurrence removedItem = null;
@@ -109,13 +142,7 @@ public class MainActivity extends AppCompatActivity implements Connector {
         }
         return removedItem;
     }
-    public static void dequeueOccurrence(){
-        /* Method needed to dequeue first item when user adds new occurrence even with
-        * the array of occurrences having full capacity (we want to make room so we kick
-        * the first)*/
-        occurrences.remove(0);
-        Log.d(TAG, "dequeued occurrences. occurrences = " + occurrences.toString());
-    }
+
 
     public void checkingIfSavedFileExists(){
         /* A simple method to greet the user letting them know if they have saved files*/
@@ -133,6 +160,17 @@ public class MainActivity extends AppCompatActivity implements Connector {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        Toolbar toolbar = (Toolbar) findViewById(R.id.custom_bar);
+        // this below was only way to change color of title for toolbar
+        toolbar.setTitle(Html.fromHtml("<font color='#ffffff'>RE-PARK </font>"));
+        Resources res = getResources();
+        Drawable d = res.getDrawable(R.drawable.menuoptions40px);
+        toolbar.setOverflowIcon(d);
+        setSupportActionBar(toolbar);
+
+
+
         Intent introIntent = new Intent(MainActivity.this, OnboardingActivity.class);
         FileHandler fh = new FileHandler();
         if(savedInstanceState == null){
@@ -173,6 +211,7 @@ public class MainActivity extends AppCompatActivity implements Connector {
         cameraFab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+
                 onClickCameraButton(view);
             }
         });
@@ -184,6 +223,26 @@ public class MainActivity extends AppCompatActivity implements Connector {
     public void onStart(){
         super.onStart();
 
+    }
+
+    @Override         // This method attaches icons to our actionbar
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater mflater = getMenuInflater();
+        mflater.inflate(R.menu.custom_bar_menu, menu);
+        return super.onCreateOptionsMenu(menu);
+    }
+
+    @Override      // THIS is the method that adds functionality to each menu item
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch(item.getItemId())
+        {
+            case R.id.help:   // this launches onboarding again
+                Intent introIntent = new Intent(MainActivity.this, OnboardingActivity.class);
+                startActivity(introIntent);
+                break;
+
+        }
+        return super.onOptionsItemSelected(item);
     }
 
     @Override
@@ -363,9 +422,9 @@ public class MainActivity extends AppCompatActivity implements Connector {
         occurrence.setText2(text2);
 
 
-        pushOccurence(occurrence);
+        Occurrence pushedAwayOccurrence = pushOccurence(occurrence);
         Log.d("MainActivity", occurrences.toString());
-        return occurrence;
+        return pushedAwayOccurrence;
     }
 
     public void createNewPagerAdapter(int viewPagerId) {
@@ -401,7 +460,7 @@ public class MainActivity extends AppCompatActivity implements Connector {
         Occurrence occurrence = new Occurrence();
         // Call prepareAndAddOccurrence to extract string texts from the EditText views and
         // assign them to an occurrence object then push that object to the occurrences array
-        prepareAndAddOccurrence(occurrence, R.id.editText1, R.id.editText2);
+         Occurrence pushedAwayOccurrence = prepareAndAddOccurrence(occurrence, R.id.editText1, R.id.editText2);
 
         // Refresh the ViewPager
         createNewPagerAdapter(R.id.pager);
@@ -410,6 +469,23 @@ public class MainActivity extends AppCompatActivity implements Connector {
         addAnimation("#0091EA");
 
         Toast.makeText(this, "Location added!", Toast.LENGTH_SHORT).show();
+
+        // Delete occurence that is going to go away
+        String retrievedImageUri = null;
+
+        if(pushedAwayOccurrence != null){
+            retrievedImageUri = pushedAwayOccurrence.getimageUriString();
+        }
+        if(retrievedImageUri != null && retrievedImageUri.contains("/")) {
+            Uri imageUri = Uri.parse(retrievedImageUri);
+            long mediaId = ContentUris.parseId(imageUri);
+            Uri contentUri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI;
+            Uri itemUri = ContentUris.withAppendedId(contentUri, mediaId);
+
+            this.getContentResolver().delete(itemUri, null, null);
+
+        }
+
     }
 
 
@@ -440,32 +516,78 @@ public class MainActivity extends AppCompatActivity implements Connector {
 
     public void onClickCameraButton(View view){
         Occurrence objectToBeAdded = new Occurrence();
+        Occurrence pushedAwayOccurrence = new Occurrence(); // this object should be deleted
+
         Uri imageUri;
 
 
 
-        values = new ContentValues();
-        values.put(MediaStore.Images.Media.TITLE, "MyPicture");
-        values.put(MediaStore.Images.Media.DESCRIPTION, "Photo taken on " +
-                System.currentTimeMillis());
-
-        // ----> uri
-        imageUri = getContentResolver().insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
-        currentImageUri = imageUri; // This is done because we need a global imageUri in onActivityResult
-
-        objectToBeAdded.setImageUriString(imageUri.toString()); // Recording the image Uri in the occurrence object
-        prepareAndAddOccurrence(objectToBeAdded, R.id.editText1, R.id.editText2);
+            values = new ContentValues();
+            values.put(MediaStore.Images.Media.TITLE, "MyPicture");
+            values.put(MediaStore.Images.Media.DESCRIPTION, "Photo taken on " +
+                    System.currentTimeMillis());
 
 
+        // Here, thisActivity is the current activity
+        if (ContextCompat.checkSelfPermission(this,
+                Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                != PackageManager.PERMISSION_GRANTED) {
+            // Permission is not granted
+            // Should we show an explanation?
+            if (ActivityCompat.shouldShowRequestPermissionRationale(this,
+                    Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
+                // Show an explanation to the user *asynchronously* -- don't block
+                // this thread waiting for the user's response! After the user
+                // sees the explanation, try again to request the permission.
+            } else {
+                // No explanation needed; request the permission
+                ActivityCompat.requestPermissions(this,
+                        new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},
+                        MY_PERMISSIONS_REQUEST_WRITE_EXTERNAL_STORAGE);
 
-        Log.d("iamgeUri ----- > ", imageUri.toString());
-        Log.d("values", values.toString());
+                // MY_PERMISSIONS_REQUEST_READ_CONTACTS is an
+                // app-defined int constant. The callback method gets the
+                // result of the request.
+            }
+        } else {
+            // Permission has already been granted
+            // ----> uri
+            imageUri = getContentResolver().insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
+            currentImageUri = imageUri; // This is done because we need a global imageUri in onActivityResult
 
-        Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-        intent.putExtra(MediaStore.EXTRA_OUTPUT, imageUri);
-        startActivityForResult(intent, CAMERA_REQUEST);
+            objectToBeAdded.setImageUriString(imageUri.toString()); // Recording the image Uri in the occurrence object
+            pushedAwayOccurrence = prepareAndAddOccurrence(objectToBeAdded, R.id.editText1, R.id.editText2);
 
-    }
+            //---------- here we delete the occurrence that will be pushed away from occurrences--------
+
+            // Delete occurence that is going to go away
+            String retrievedImageUri = null;
+
+            if(pushedAwayOccurrence != null){
+                retrievedImageUri = pushedAwayOccurrence.getimageUriString();
+            }
+            if(retrievedImageUri != null && retrievedImageUri.contains("/")) {
+                Uri imageUri2 = Uri.parse(retrievedImageUri);
+                long mediaId = ContentUris.parseId(imageUri2);
+                Uri contentUri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI;
+                Uri itemUri = ContentUris.withAppendedId(contentUri, mediaId);
+
+                this.getContentResolver().delete(itemUri, null, null);
+
+            }
+
+           // -----------------------------------------------------------------------------------------
+
+
+            Log.d("iamgeUri ----- > ", imageUri.toString());
+            Log.d("values", values.toString());
+
+            Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+            intent.putExtra(MediaStore.EXTRA_OUTPUT, imageUri);
+            startActivityForResult(intent, CAMERA_REQUEST);
+            }
+        }
+
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data){
@@ -492,17 +614,42 @@ public class MainActivity extends AppCompatActivity implements Connector {
          */
         String imageName;
         Bitmap bitmap = null;
-        try {
-            bitmap = MediaStore.Images.Media.getBitmap(getContentResolver(), selectedImageUri);
-            if (bitmap != null) {
-                Log.d("bitmap", bitmap.toString());
-                Log.d("iamgeUri", selectedImageUri.toString());
-                Log.d("fileName ", getFileName(selectedImageUri));
+        try { // Check permission here?
+            // Here, thisActivity is the current activity
+            if (ContextCompat.checkSelfPermission(this,
+                    Manifest.permission.READ_EXTERNAL_STORAGE)
+                    != PackageManager.PERMISSION_GRANTED) {
+                // Permission is not granted
+                // Should we show an explanation?
+                if (ActivityCompat.shouldShowRequestPermissionRationale(this,
+                        Manifest.permission.READ_EXTERNAL_STORAGE)) {
+                    // Show an explanation to the user *asynchronously* -- don't block
+                    // this thread waiting for the user's response! After the user
+                    // sees the explanation, try again to request the permission.
+                } else {
+                    // No explanation needed; request the permission
+                    ActivityCompat.requestPermissions(this,
+                            new String[]{Manifest.permission.READ_EXTERNAL_STORAGE},
+                            MY_PERMISSIONS_REQUEST_READ_EXTERNAL_STORAGE);
 
-                imageName = getFileName(selectedImageUri);
-                //imageNames.add(imageName);
+                    // MY_PERMISSIONS_REQUEST_READ_CONTACTS is an
+                    // app-defined int constant. The callback method gets the
+                    // result of the request.
+                }
+            } else {
+                // Permission has already been granted
 
-                Log.d("imageName", imageName);
+                bitmap = MediaStore.Images.Media.getBitmap(getContentResolver(), selectedImageUri);
+                if (bitmap != null) {
+                    Log.d("bitmap", bitmap.toString());
+                    Log.d("iamgeUri", selectedImageUri.toString());
+                    Log.d("fileName ", getFileName(selectedImageUri));
+
+                    imageName = getFileName(selectedImageUri);
+                    //imageNames.add(imageName);
+
+                    Log.d("imageName", imageName);
+                }
             }
 
 
@@ -600,6 +747,8 @@ public class MainActivity extends AppCompatActivity implements Connector {
     public Bitmap getCurrentBitmapImage(){
         return currentBitmapImage;
     }
+
+
 
 
 

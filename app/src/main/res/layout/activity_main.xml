@@ -8,6 +8,10 @@
     android:orientation="vertical"
     tools:context=".MainActivity">
 
+    <include layout="@layout/custom_bar"
+        android:id="@+id/custom_bar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"></include>
 
     <android.support.v4.view.ViewPager
         android:id="@+id/pager"

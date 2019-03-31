@@ -15,7 +15,6 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import android.widget.Button;
-import android.widget.ImageButton;
 import android.widget.ImageView;
 
 
@@ -39,8 +38,8 @@ public class OnboardingActivity extends AppCompatActivity {
     Button mNextBtn;
     Button mFinishBtn, mSkipBtn;
 
-    ImageView zero, one, two, three;
-    ImageView[] indicators = new ImageView[4];
+    ImageView zero, one, two, three, four, five, six;
+    ImageView[] indicators = new ImageView[7];
 
 
 
@@ -77,10 +76,18 @@ public class OnboardingActivity extends AppCompatActivity {
         one = (ImageView) findViewById(R.id.intro_indicator_1);
         two = (ImageView) findViewById(R.id.intro_indicator_2);
         three = (ImageView) findViewById(R.id.intro_indicator_3);
+        four = (ImageView) findViewById(R.id.intro_indicator_4);
+        five = (ImageView) findViewById(R.id.intro_indicator_5);
+        six = (ImageView) findViewById(R.id.intro_indicator_6);
+
         indicators[0] = zero;
         indicators[1] = one;
         indicators[2] = two;
         indicators[3] = three;
+        indicators[4] = four;
+        indicators[5] = five;
+        indicators[6] = six;
+
 
 
 
@@ -101,8 +108,8 @@ public class OnboardingActivity extends AppCompatActivity {
 
 
 
-               mNextBtn.setVisibility(position == 3 ? View.GONE : View.VISIBLE);
-               mFinishBtn.setVisibility(position == 3 ? View.VISIBLE : View.GONE);
+               mNextBtn.setVisibility(position == 6 ? View.GONE : View.VISIBLE);
+               mFinishBtn.setVisibility(position == 6 ? View.VISIBLE : View.GONE);
 
 
            }
@@ -186,8 +193,9 @@ public class OnboardingActivity extends AppCompatActivity {
 
         ImageView img;
 
-        int[] imageList = new int[]{R.drawable.firstscreen, R.drawable.swipes1,
-                R.drawable.bigscreenshottext, R.drawable.bigscreenshotbuttons};
+        int[] imageList = new int[]{R.drawable.firstscreen, R.drawable.newreparkaddbutton,
+                R.drawable.newreparkremovebutton, R.drawable.newreparkcamr,
+                R.drawable.newreparktext1, R.drawable.newreparkdisplay, R.drawable.notification};
 
         public PlaceholderFragment() {
         }
@@ -234,8 +242,8 @@ public class OnboardingActivity extends AppCompatActivity {
 
         @Override
         public int getCount() {
-            // Show 3 total pages.
-            return 4;
+            // Show 7 total pages.
+            return 7;
         }
     }
 }
