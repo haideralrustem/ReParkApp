@@ -2,13 +2,14 @@ package com.haideralrustem1990.repark;
 
 import android.Manifest;
 import android.animation.ValueAnimator;
-import android.app.Activity;
-import android.app.AlertDialog;
+import android.app.PendingIntent;
+import android.content.BroadcastReceiver;
 import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.content.res.Resources;
 import android.database.Cursor;
@@ -16,18 +17,18 @@ import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
-import android.os.Build;
 import android.provider.MediaStore;
 import android.provider.OpenableColumns;
-import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;
 import android.support.v4.content.ContextCompat;
+import android.support.v4.content.LocalBroadcastManager;
 import android.support.v4.graphics.ColorUtils;
 import android.support.v4.view.ViewPager;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
@@ -44,7 +45,10 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 
-import java.io.File;
+import com.google.android.gms.location.ActivityRecognitionClient;
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.tasks.Task;
+
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -62,12 +66,30 @@ public class MainActivity extends AppCompatActivity implements Connector {
     private static final int CAMERA_REQUEST = 1888;
     public static final int MY_PERMISSIONS_REQUEST_WRITE_EXTERNAL_STORAGE = 112;
     public static final int MY_PERMISSIONS_REQUEST_READ_EXTERNAL_STORAGE = 113;
+    public static final int MY_ACTIVITY_RECOGNITION_PERMISSION_CODE = 114;  // some random identifier
 
 
 
     public static ArrayList<Occurrence> occurrences = new ArrayList<>(initialCapacity);
 
     static String TAG = "- - - DEBUG - - -  ";
+    boolean dialogAppeared =false;
+
+    //---- Variables For Activity Recognition functionality -------------------------------
+
+    static long DETECTION_INTERVAL_IN_MILLISECONDS = 1000;
+
+    // An arraylist that will be used to capture results from the IntentService broadcaster
+    static ArrayList <String> detectedActivitiesList = new ArrayList<>();
+
+    private ActivityRecognitionClient mActivityRecognitionClient;   // the client that will initiate the IntentService when he has got activity updates
+    BroadcastReceiver broadcastReceiver;
+    String text = "variables";
+
+    static boolean startedDriving = false;  // these are used to track user driving to trigger right actions
+    static boolean finishedDriving = true;
+
+    //------------------------------------------------------------------------------------
 
 
     public void loadArrayFromFile(){ // <<<=================  load data from file
@@ -148,13 +170,22 @@ public class MainActivity extends AppCompatActivity implements Connector {
         /* A simple method to greet the user letting them know if they have saved files*/
         FileHandler fh = new FileHandler();
         if (fh.checkIfFileExists(saveFileName, this)){
-            Toast.makeText(this, "Loading your saved locations", Toast.LENGTH_SHORT).show();
+
+            if (ContextCompat.checkSelfPermission(this,
+                    Manifest.permission.READ_EXTERNAL_STORAGE)
+                    != PackageManager.PERMISSION_GRANTED){
+                Toast.makeText(this, "Permission Needed", Toast.LENGTH_SHORT).show();
+            }
+             else{
+                 Toast.makeText(this, "Loading your saved locations", Toast.LENGTH_SHORT).show();
+            }
         }
         else {
             Toast.makeText(this, "Preparing", Toast.LENGTH_SHORT).show();
         }
     }
 
+    //---------- Parent methods-----------------
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -170,7 +201,7 @@ public class MainActivity extends AppCompatActivity implements Connector {
         setSupportActionBar(toolbar);
 
 
-
+        // Onboarding tutorial
         Intent introIntent = new Intent(MainActivity.this, OnboardingActivity.class);
         FileHandler fh = new FileHandler();
         if(savedInstanceState == null){
@@ -178,6 +209,35 @@ public class MainActivity extends AppCompatActivity implements Connector {
                 startActivity(introIntent);
             }
         }
+
+        // ---- checking read permission ---
+        // Here, thisActivity is the current activity
+        if (ContextCompat.checkSelfPermission(this,
+                Manifest.permission.READ_EXTERNAL_STORAGE)
+                != PackageManager.PERMISSION_GRANTED) {
+            // Permission is not granted
+            // Should we show an explanation?
+            if (ActivityCompat.shouldShowRequestPermissionRationale(this,
+                    Manifest.permission.READ_EXTERNAL_STORAGE)) {
+                // Show an explanation to the user *asynchronously* -- don't block
+                // this thread waiting for the user's response! After the user
+                // sees the explanation, try again to request the permission.
+
+                requestReadPermission();
+            } else {
+                // No explanation needed; request the permission
+                ActivityCompat.requestPermissions(this,
+                        new String[]{Manifest.permission.READ_EXTERNAL_STORAGE},
+                        MY_PERMISSIONS_REQUEST_READ_EXTERNAL_STORAGE);
+
+                // MY_PERMISSIONS_REQUEST_READ_CONTACTS is an
+                // app-defined int constant. The callback method gets the
+                // result of the request.
+            }
+        } else {
+            // Permission has already been granted
+        }
+
 
 
         if(savedInstanceState == null){
@@ -216,13 +276,56 @@ public class MainActivity extends AppCompatActivity implements Connector {
             }
         });
 
+        // Here we define the broadcast receiver which should receive info from IntentService
+        // This is a feature that is only implemented here for testing, as activities will not show
+        // on the HUD of our app. (maybe for future use? or factory use?). If you want to enable broadcast
+        //receiver, go to the IntentService and uncomment the broadcastActivity() method
+
+        // broadcastReceiver here calls onReceive() whenever it receives a intent (with a specific action label) from other sources
+        broadcastReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                if (intent.getAction().equals("activities_intent")) {  // action string must match from sender
+
+                    ArrayList<String> a = intent.getStringArrayListExtra("activity");
+                    text = intent.getStringExtra("variables");
+
+                    detectedActivitiesList = a;
+
+                    for(String it: detectedActivitiesList){
+                        Log.v("HAIDER", " on receive says: "+ it);
+                    }
+                }
+            }
+        };
+
+        // Our broadcastReceiver object is being registered here. Repeat this in onResume()
+        LocalBroadcastManager.getInstance(this).registerReceiver(broadcastReceiver,
+                new IntentFilter("activity_intent"));
+
+        // this client is being instantiated here. It is responsible for monitoring  activity updates
+        mActivityRecognitionClient = new ActivityRecognitionClient(this);
+
+
+
+
     }
 
 
     @Override
     public void onStart(){
         super.onStart();
+        // request permission for activity recognition
+        requestProbableActivities();
 
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // Our broadcastReceiver object is being registered here
+        LocalBroadcastManager.getInstance(this).registerReceiver(broadcastReceiver,
+                new IntentFilter("activity_intent"));
     }
 
     @Override         // This method attaches icons to our actionbar
@@ -241,6 +344,7 @@ public class MainActivity extends AppCompatActivity implements Connector {
                 startActivity(introIntent);
                 break;
 
+
         }
         return super.onOptionsItemSelected(item);
     }
@@ -254,9 +358,43 @@ public class MainActivity extends AppCompatActivity implements Connector {
     }
 
     @Override
+    protected void onStop() {
+        super.onStop();
+        // Our broadcastReceiver object is being unregistered here
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(broadcastReceiver);
+    }
+
+    @Override
     public void onDestroy(){
 
         super.onDestroy();
+    }
+
+    // This is the method that initiates the IntentService that will get the probable activities the user is doing
+    public void requestProbableActivities() {
+
+        // We need to create an Intent that will launch our IntentService. IntentService is the
+        // the service that will specify (in onHandleIntent()) what we should do when we receive a
+        // list of probable activities the user is doing (print them or issue notifications for example)
+        Intent intent = new Intent(this, DActivitiesIntentService.class);
+
+        PendingIntent pt = PendingIntent.getService(this, 1, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+
+        Log.v("HAIDER", "requestActivity called");
+        //Task initiates activity monitoring and will launch the PendingIntent when it has updates.
+        // Set the activity detection interval.
+        Task<Void> task = mActivityRecognitionClient.requestActivityUpdates(
+                DETECTION_INTERVAL_IN_MILLISECONDS,
+                pt);
+        task.addOnSuccessListener(new OnSuccessListener<Void>() {
+            @Override
+            public void onSuccess(Void result) {
+
+                // on task success is not the actual method that will receive the list of activites
+                // becuase that will be the job of IntentService onHandleIntent() method
+                Log.v("HAIDER", "Task successful");
+            }
+        });
     }
 
 
@@ -511,16 +649,15 @@ public class MainActivity extends AppCompatActivity implements Connector {
     }
 
 
-    // METHODS FOR CAMERA BUTTON
+    //------- METHODS FOR CAMERA BUTTON  -----------
 
 
     public void onClickCameraButton(View view){
+        boolean writePermissionGranted = false;
         Occurrence objectToBeAdded = new Occurrence();
         Occurrence pushedAwayOccurrence = new Occurrence(); // this object should be deleted
 
         Uri imageUri;
-
-
 
             values = new ContentValues();
             values.put(MediaStore.Images.Media.TITLE, "MyPicture");
@@ -539,11 +676,25 @@ public class MainActivity extends AppCompatActivity implements Connector {
                 // Show an explanation to the user *asynchronously* -- don't block
                 // this thread waiting for the user's response! After the user
                 // sees the explanation, try again to request the permission.
+
+                Log.v("HAIDER", "requestWritePermission is bout to be called");
+                // We achieve this through this private method (it is defined below this method)
+                // This method is called Async because dialog in it is Async. Thus, onCamerClick() will
+                // finish while the dialog remains
+                if(dialogAppeared == false) {
+                    requestWritePermission();
+                }
+                Log.v("HAIDER", "AFTER requestWritePermission is bout to be called");
+
+
+
             } else {
                 // No explanation needed; request the permission
                 ActivityCompat.requestPermissions(this,
                         new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},
                         MY_PERMISSIONS_REQUEST_WRITE_EXTERNAL_STORAGE);
+
+                Log.v("HAIDER", "No explanation needed; request the permission");
 
                 // MY_PERMISSIONS_REQUEST_READ_CONTACTS is an
                 // app-defined int constant. The callback method gets the
@@ -551,6 +702,7 @@ public class MainActivity extends AppCompatActivity implements Connector {
             }
         } else {
             // Permission has already been granted
+            Log.v("HAIDER", "Permission has already been granted");
             // ----> uri
             imageUri = getContentResolver().insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
             currentImageUri = imageUri; // This is done because we need a global imageUri in onActivityResult
@@ -586,7 +738,84 @@ public class MainActivity extends AppCompatActivity implements Connector {
             intent.putExtra(MediaStore.EXTRA_OUTPUT, imageUri);
             startActivityForResult(intent, CAMERA_REQUEST);
             }
+            Log.v("HAIDER", "method click camera has finished");
         }
+
+    private void requestWritePermission(){
+        new AlertDialog.Builder(this)
+                .setTitle("Permission To Save Photos")
+                .setMessage("RE-PARK requires permission to save location photos that you take with your camera." +
+                        " Denying this permission will prevent you from saving location photos to your device")
+                // specify the OK button
+                .setPositiveButton("Accept", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        dialogAppeared = true;
+                        // request permission again
+                        ActivityCompat.requestPermissions(MainActivity.this,
+                                new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},
+                                MY_PERMISSIONS_REQUEST_WRITE_EXTERNAL_STORAGE);
+                        onClickCameraButton(null);
+
+                    }
+                })
+                // Specify the negation button
+                .setNegativeButton("Deny", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        dialogInterface.dismiss();
+                    }
+                }).create().show();
+    }
+    private void requestReadPermission(){
+        new AlertDialog.Builder(this)
+                .setTitle("Permission To Retrieve Photos")
+                .setMessage("RE-PARK requires permission to retrieve location photos that you have taken with your camera." +
+                        " Denying this permission will prevent you from accessing any saved location photos")
+                // specify the OK button
+                .setPositiveButton("Accept", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        // request permission again
+                        ActivityCompat.requestPermissions(MainActivity.this,
+                                new String[]{Manifest.permission.READ_EXTERNAL_STORAGE},
+                                MY_PERMISSIONS_REQUEST_READ_EXTERNAL_STORAGE);
+
+                    }
+                })
+                // Specify the negation button
+                .setNegativeButton("Deny", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        dialogInterface.dismiss();
+                    }
+                }).create().show();
+    }
+
+    private void requestActivityReconPermission(){
+        new AlertDialog.Builder(this)
+                .setTitle("Permission To Save Photos")
+                .setMessage("RE-PARK requires permission to save location photos that you take with your camera." +
+                        " Denying this permission will prevent you from saving location photos to your device")
+                // specify the OK button
+                .setPositiveButton("Accept", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        // request permission again
+                        ActivityCompat.requestPermissions(MainActivity.this,
+                                new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},
+                                MY_PERMISSIONS_REQUEST_WRITE_EXTERNAL_STORAGE);
+
+                    }
+                })
+                // Specify the negation button
+                .setNegativeButton("Deny", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        dialogInterface.dismiss();
+                    }
+                }).create().show();
+    }
 
 
     @Override
@@ -626,6 +855,8 @@ public class MainActivity extends AppCompatActivity implements Connector {
                     // Show an explanation to the user *asynchronously* -- don't block
                     // this thread waiting for the user's response! After the user
                     // sees the explanation, try again to request the permission.
+
+                   // requestReadPermission();
                 } else {
                     // No explanation needed; request the permission
                     ActivityCompat.requestPermissions(this,

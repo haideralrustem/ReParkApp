@@ -1,117 +1,139 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/topLinearLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="horizontal"
+    android:orientation="vertical"
     tools:context=".MainActivity">
 
+    <include
+        android:id="@+id/custom_bar"
+        layout="@layout/custom_bar"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1.4"></include>
+
 
     <LinearLayout
-        android:layout_width="0dp"
-        android:layout_height="match_parent"
-        android:layout_weight="4"
-        android:orientation="vertical">
+        android:id="@+id/topLinearLayout"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:orientation="horizontal"
+        android:layout_weight="10"
+        >
 
 
-        <android.support.v4.view.ViewPager
-            android:id="@+id/pager"
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_marginLeft="15dp"
-            android:layout_marginTop="3dp"
-            android:layout_marginRight="15dp"
-            android:layout_marginBottom="8dp"
-            android:layout_weight="1"
-            android:background="@drawable/border2">
-
-        </android.support.v4.view.ViewPager>
-
-        <EditText
-            android:id="@+id/editText1"
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_marginStart="15dp"
-            android:layout_marginEnd="15dp"
-            android:layout_marginBottom="10dp"
-            android:layout_weight="0.2"
-            android:background="@drawable/border"
-            android:ems="10"
-            android:gravity="top"
-            android:hint="Enter Floor or Street Number"
-            android:inputType="number" />
-
-        <EditText
-            android:id="@+id/editText2"
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_marginStart="15dp"
-            android:layout_marginEnd="15dp"
-            android:layout_marginBottom="5dp"
-            android:layout_weight="0.2"
-            android:background="@drawable/border"
-            android:ems="10"
-            android:gravity="top"
-            android:hint="Enter additional info here.."
-            android:inputType="textPersonName"
-            android:textSize="18sp" />
-    </LinearLayout>
-
-    <LinearLayout
-        android:layout_width="0dp"
-        android:layout_height="match_parent"
-        android:layout_weight="1.4"
-        android:gravity="center"
-        android:orientation="vertical">
-
-        <android.support.design.widget.FloatingActionButton
-            android:id="@+id/save_button"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:layout_marginLeft="10dp"
-            android:layout_marginRight="10dp"
-            android:layout_marginBottom="10dp"
-
-            android:padding="0dp"
-            android:scaleType="center"
-            android:src="@drawable/round_add_white_48dp"
-            app:backgroundTint="@android:color/holo_blue_dark"
-            app:fabSize="normal" />
-
-        <android.support.design.widget.FloatingActionButton
-            android:id="@+id/remove_button"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:layout_marginLeft="10dp"
-            android:layout_marginTop="10dp"
-            android:layout_marginRight="10dp"
-
-            android:layout_marginBottom="5dp"
-            android:scaleType="center"
-            android:src="@drawable/round_close_white_48dp"
-            app:backgroundTint="@android:color/holo_red_light"
-            app:fabSize="normal" />
-
-        <android.support.design.widget.FloatingActionButton
-            android:id="@+id/camera_button"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:layout_marginLeft="10dp"
-            android:layout_marginTop="10dp"
-            android:layout_marginRight="10dp"
-
-            android:layout_marginBottom="2dp"
-            android:scaleType="center"
-            android:src="@drawable/camera48dp"
-            app:backgroundTint="@android:color/darker_gray"
-            app:fabSize="normal" />
-
-    </LinearLayout>
 
 
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="5"
+            android:orientation="vertical">
+
+
+            <android.support.v4.view.ViewPager
+                android:id="@+id/pager"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_marginLeft="15dp"
+                android:layout_marginTop="3dp"
+                android:layout_marginRight="15dp"
+                android:layout_marginBottom="8dp"
+                android:layout_weight="6"
+                android:background="@drawable/border2">
+
+            </android.support.v4.view.ViewPager>
+
+            <EditText
+                android:id="@+id/editText1"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="15dp"
+                android:layout_marginEnd="15dp"
+                android:layout_marginBottom="3dp"
+                android:layout_weight="0.2"
+                android:background="@drawable/border"
+                android:ems="10"
+                android:gravity="top"
+                android:hint="Enter Floor or Street Number"
+                android:inputType="text"
+                android:textSize="14sp" />
+
+            <EditText
+                android:id="@+id/editText2"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="15dp"
+                android:layout_marginTop="0dp"
+                android:layout_marginEnd="15dp"
+                android:layout_marginBottom="8dp"
+                android:layout_weight="0.2"
+                android:background="@drawable/border"
+                android:ems="10"
+                android:gravity="top"
+                android:hint="Enter additional info here.."
+                android:inputType="textPersonName"
+                android:textSize="14sp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1.3"
+            android:gravity="center"
+            android:orientation="vertical">
+
+            <android.support.design.widget.FloatingActionButton
+                android:id="@+id/save_button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_marginLeft="10dp"
+                android:layout_marginRight="10dp"
+                android:layout_marginBottom="10dp"
+
+                android:padding="0dp"
+                android:scaleType="center"
+                android:src="@drawable/round_add_white_48dp"
+                app:backgroundTint="@android:color/holo_blue_dark"
+                app:fabSize="normal" />
+
+            <android.support.design.widget.FloatingActionButton
+                android:id="@+id/remove_button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_marginLeft="10dp"
+                android:layout_marginTop="10dp"
+                android:layout_marginRight="10dp"
+
+                android:layout_marginBottom="5dp"
+                android:scaleType="center"
+                android:src="@drawable/round_close_white_48dp"
+                app:backgroundTint="@android:color/holo_red_light"
+                app:fabSize="normal" />
+
+            <android.support.design.widget.FloatingActionButton
+                android:id="@+id/camera_button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_marginLeft="10dp"
+                android:layout_marginTop="10dp"
+                android:layout_marginRight="10dp"
+
+                android:layout_marginBottom="2dp"
+                android:scaleType="center"
+                android:src="@drawable/camera48dp"
+                app:backgroundTint="@android:color/darker_gray"
+                app:fabSize="normal" />
+
+        </LinearLayout>
+
+
+      </LinearLayout>
 </LinearLayout>
